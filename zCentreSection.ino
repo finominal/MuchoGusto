@@ -37,6 +37,7 @@ void FireCentre(int size)
     
     FastLED.show();
     delay(15);
+    
     movement+=movementFactor;  //moveplasma
 
   }

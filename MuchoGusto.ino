@@ -1,14 +1,16 @@
+//For Teensy 4.0
+
 #include <FastLED.h>
-//#include <Flash.h>
 
-#define MINUTE_MULTIPLIER 60000
-
-
+//Change Stuff
+volatile uint16_t brightness = 255;
+#define FIRE_RUN_MINUTES 5
+#define PLASMA_RUN_MINUTES 2
 
 //declarations
+#define MINUTE_MULTIPLIER 60000
 void Fire(); 
 const int numberOfFireFrames = 350;
-
 void Pink();
 int mapLed(float s);
 uint32_t Color(byte r, byte g, byte b);
@@ -21,7 +23,6 @@ float SinRotating(float x, float y, float size);
 const int LEDCOUNT = 289; 
 #define DATAPIN 3
 CRGB leds[LEDCOUNT];
-volatile uint16_t brightness = 255;
 
 class LED
 {
@@ -62,8 +63,8 @@ LED(32,52,279,0),LED(30,52,280,0),LED(28,52,281,0),LED(26,52,282,0),LED(24,52,28
 //Program management
 enum PROGRAM {fire, pink, fire2, rainbow };
 PROGRAM currentProgram = fire; 
-uint32_t fireRuntime = 5 * MINUTE_MULTIPLIER; //5min
-uint32_t plasmaRuntime = 2 * MINUTE_MULTIPLIER; //1 mimn
+uint32_t fireRuntime = FIRE_RUN_MINUTES * MINUTE_MULTIPLIER; //5min
+uint32_t plasmaRuntime = PLASMA_RUN_MINUTES * MINUTE_MULTIPLIER; //1 mimn
 uint32_t programChangeTime = plasmaRuntime;
 
 //Plasma animation variables
@@ -81,7 +82,7 @@ void setup()
   FastLED.addLeds<WS2812B, DATAPIN, GRB>(leds, LEDCOUNT);
   FastLED.setBrightness(brightness);
 
-  movement = random(0,20)/0.7; //randomize start pattern
+  movement = random(0,20)/0.7; //randomize start pattern for plasma
 }
  
 void loop()
@@ -145,14 +146,13 @@ void SetNextProgramChangeTime()
     case rainbow:
       SetProgramChangeTime(plasmaRuntime);
       break;
-  }
-    
+  } 
 }
 
 void SetProgramChangeTime(uint32_t runtimeMs)
 {
   programChangeTime = millis() + (runtimeMs);
-      Serial.print("programChangeTime="); Serial.println(programChangeTime);
+  Serial.print("programChangeTime="); Serial.println(programChangeTime);
 }
 
 void ClearAll()
