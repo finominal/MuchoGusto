@@ -1,14 +1,15 @@
+//For Teensy 4.0
 #include <FastLED.h>
-//#include <Flash.h>
+#include <EEPROM.h>
 
-#define MINUTE_MULTIPLIER 60000
-
-
+//Change StuffNoNo   
+volatile uint16_t brightness = 255;
 
 //declarations
+#define CURENT_PROGRAM_MEMORY_LOCATION 0
+void LoadNextProgram();
 void Fire(); 
 const int numberOfFireFrames = 350;
-
 void Pink();
 int mapLed(float s);
 uint32_t Color(byte r, byte g, byte b);
@@ -18,10 +19,10 @@ float SinCircle(float x, float y, float size);
 float SinVerticle(float x, float y, float size);
 float SinRotating(float x, float y, float size);
 
+//led declarations
 const int LEDCOUNT = 289; 
 #define DATAPIN 3
 CRGB leds[LEDCOUNT];
-volatile uint16_t brightness = 255;
 
 class LED
 {
@@ -59,34 +60,35 @@ LED(9,48,263,0),LED(11,48,264,0),LED(13,48,265,0),LED(15,48,266,0),LED(17,48,267
 LED(32,52,279,0),LED(30,52,280,0),LED(28,52,281,0),LED(26,52,282,0),LED(24,52,283,0),LED(22,52,284,0),LED(20,52,285,0),LED(18,52,286,0),LED(16,52,287,0),LED(14,52,288,0)
 };
 
-//Program management
-enum PROGRAM {fire, pink, fire2, rainbow };
-PROGRAM currentProgram = fire; 
-uint32_t fireRuntime = 5 * MINUTE_MULTIPLIER; //5min
-uint32_t plasmaRuntime = 2 * MINUTE_MULTIPLIER; //1 mimn
-uint32_t programChangeTime = plasmaRuntime;
-
 //Plasma animation variables
 float movement = 0;
 float movementFactor = 0.01031; //move along by...advances plasma animation
 float mapMin = -201;
 float mapMax = 201;
 float r,g,b,shade;
- 
+
+//programSelection 
+enum PROGRAM {fire, pink, fire2, rainbow }; //remember to match numberOfPrograms
+PROGRAM currentProgram = fire;
+const int numberOfPrograms = 4; //no way to count enums. 
+
 void setup()
 {
+  delay(100);
   Serial.begin(115200);
   Serial.println("*** RESET ***");
  
   FastLED.addLeds<WS2812B, DATAPIN, GRB>(leds, LEDCOUNT);
   FastLED.setBrightness(brightness);
 
-  movement = random(0,20)/0.7; //randomize start pattern
+  movement = random(0,20)/0.7; //randomize start pattern for plasma
+
+  LoadNextProgram();
 }
  
 void loop()
 {
-  RotateProgram();
+  //RotateProgram();
 
   switch(currentProgram)
   {
@@ -106,57 +108,23 @@ void loop()
 
 }
 
-void RotateProgram()
- {
-   if(programChangeTime < millis())
-    {
-      Serial.println("Rotate");
-      switch(currentProgram)
-      {
-        case fire:
-          currentProgram = pink;
-          movement = random(0,20)/0.7;
-          break;
-        case pink: 
-          currentProgram = fire2;
-          break;
-        case fire2: 
-          currentProgram = rainbow;
-          movement = random(0,20)/0.7;
-          break;
-        case rainbow: 
-          currentProgram = fire;
-          break;
-      }
-      Serial.println(currentProgram); //{fire, pink, fire2, rainbow };
-      SetNextProgramChangeTime();
-    }
- }
-
-void SetNextProgramChangeTime()
-{
-   switch(currentProgram)
-  {
-    case fire:
-    case fire2:
-      SetProgramChangeTime(fireRuntime);
-      break;
-    case pink:
-    case rainbow:
-      SetProgramChangeTime(plasmaRuntime);
-      break;
-  }
-    
-}
-
-void SetProgramChangeTime(uint32_t runtimeMs)
-{
-  programChangeTime = millis() + (runtimeMs);
-      Serial.print("programChangeTime="); Serial.println(programChangeTime);
-}
-
 void ClearAll()
 {
   for(int i = 0; i<LEDCOUNT; i++) leds[i] = 0;
 }
  
+void LoadNextProgram()
+{
+  int storedProgram = EEPROM.read(CURENT_PROGRAM_MEMORY_LOCATION);
+  storedProgram++;
+
+  if(storedProgram >= numberOfPrograms)  //reset to zero
+  {
+    storedProgram = 0; 
+  }
+
+  currentProgram = (PROGRAM)storedProgram; //Set
+  Serial.print("currentProgram=");  Serial.println(currentProgram);
+
+  EEPROM.write(CURENT_PROGRAM_MEMORY_LOCATION, currentProgram);  //Save 
+}
