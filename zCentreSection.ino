@@ -28,9 +28,9 @@ void FireCentre(int size)
         leds[j] = CHSV(mapLED(shade), 255, brightness);
 
         //pale blue
-        leds[j].r = 0;
-        leds[j].g = leds[j].b/4; 
-        leds[j].b = leds[j].b/2; 
+        leds[j].g = leds[j].r/2; 
+        leds[j].b = leds[j].r/4; //warm white
+        leds[j].r = leds[j].r/2; 
       }
 
     } 
